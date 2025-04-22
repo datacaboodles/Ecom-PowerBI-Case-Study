@@ -1,0 +1,341 @@
+OBJECTIVE
+By analysing customer behaviour data with Power BI, we can gain valuable insights into e-commerce operations.  The resulting dashboards empower stakeholders to optimise marketing strategies, improve product performance, and drive business growth.
+
+DATA CLEANING 
+TASK 1: Understanding the Data
+	
+	Sales_Data_Ecommerce
+		Key attributes:
+			event_type: Indicates whether the user viewed, added to a cart, or 				    purchased a product.
+			price: Price of the product. 
+			brand, category, sub_category: Information about the product.
+			event_date, event_time, event_hour: Timestamp of the event.
+			channel: Whether the customer used an app or browser.
+			state, user_id, user_score: Customer-related information.	 	Promotions Dataset
+		Key attributes:
+			Promotion ID
+			Date: When the promotion was active.
+			Discount %
+			Product ID: Which product was promoted?
+
+TASK 2: Configure the Data 
+
+- Imported `Sales_Data_Ecommerce` and `Promotions` datasets into **Power Query Editor**.
+- Checked data preview to understand structure.
+- Analyze duplicates to understand:
+		a. Are they due to multiple events for the same user?
+		b. Are they duplicate rows with identical information?
+		c. Are there multiple promotions for the same product?
+-Outliers
+	Do you want to remove, replace, or keep outliers for further analysis?
+	Should we apply both IQR and Z-Score methods and compare the results?
+
+TASK 3: Data Checks and Validation
+
+Sales_Data_Ecommerce dataset
+	
+1. Check for Nulls and Duplicates
+2. Removed column event_timezone (contained only a single value for all the records)
+3. Removed Duplicated rows based on:
+	-user_id, transaction_id (new column created)
+4. Change the Data Type Formats of the columns to the suitable data types 
+	-Changed data type of price to decimal 
+5. Extracted event_month from event_date to compare revenue months.
+6. Handled Text Inconsistencies or Standardization
+	-Trim and clean category, sub_category1, sub_category2, and brand:
+	-Use Transform → Format → Trim & Clean.
+	-Convert the above column names to Proper Case (e.g., "apple" → "Apple").
+7. Created a new column called Transaction_Id by combining user_id, event_date, and product_id to uniquely identify and track the data of sales. 
+8. Created a new column called Hour Group that groups hours into Morning, Afternoon, Evening, and Night.
+9. Created a new column called High-Value Transactions Column
+	- Define a threshold (e.g., Top 10% of prices).
+	- Create a conditional column: If price > threshold, label it "High-Value 		Purchase". Otherwise, label it as "Regular Purchase".
+10. Created a new column called Revenue for purchase-only event type.
+
+
+Promotion dataset
+
+1. Keep the columns
+2. The tables "sales" and "promotion" were merged using Right Join. This allows us to analyze how promotions affect sales and customer behaviour.
+3. Removed blank rows.
+4. Removed duplicated rows
+7. Removed null values based on product id.
+5. Created a new column called Promotion Flag based on Discount as promoted or not promoted
+6. Created a new column called Discounted_price for analysis
+
+
+Wrapping Up:
+Press Close and Apply, loading the dataset to the report 
+
+--------------------------------------------------------------------------
+DATA PROCESSING & MODEL SETUP
+
+- What relationships would you establish between Sales_Data_Ecommerce and Promotions?
+	- One to Many Relationship based on Product id 
+
+Columns to Hide (For Performance Optimization)
+	category_id
+	event_hour
+	Promotion Id
+
+-------------------------------------------------------------------------
+Exploratory Data Analysis (EDA)
+
+1. What key trends do you expect to see in the data?
+
+- Sales Trends: Identify top-selling products, brands, and categories over time.
+- Customer Behavior: Track how users navigate the site (viewing, carting, purchasing).
+- Conversion Funnel Analysis: Understand where customers drop off.
+- Regional Performance: Identify which states drive the most and least revenue.
+- Peak Shopping Times: Determine the most active hours/days for sales.
+- Brand Engagement: Which brands/products have the highest user interactions?
+
+2. Do you want to analyze customer journey behavior, conversion rates, and peak times?
+Yes, a customer journey analysis is crucial to understanding:
+
+- How many users view a product but don’t purchase?
+- Where do customers drop off in the purchase funnel?
+- Which time periods have the highest and lowest sales?
+- We can analyze conversion rates by tracking:
+
+View → Cart → Purchase drop-offs.
+Cart abandonment rate to identify lost revenue opportunities.
+
+3. How should we visualize initial findings before moving to dashboard creation?
+Before building dashboards, we can use:
+
+- Histograms & Box Plots for user session durations and purchase behavior.
+- Bar Charts for sales by category, state, and brand.
+- Funnel Charts for the customer journey (view → cart → purchase).
+- Heatmaps for peak purchase times by hour and day.
+- Scatter Plots to find relationships between discounts and conversions.
+
+4. What is your main goal with this dashboard?
+The dashboard should focus on all key aspects:
+
+- Sales Trends – Revenue, top-selling products, and peak sales periods.
+- User Behavior – How customers navigate, bounce rates, and drop-offs.
+- Product Performance – Which brands/categories drive engagement and revenue.
+
+This will help in making data-driven decisions for marketing, pricing, and inventory.
+
+5. Who will use this dashboard?
+The primary users will be:
+
+- Marketing Teams – To optimize conversion rates and campaigns.
+- Product Managers – To understand product demand and user engagement.
+- Executives & Stakeholders – To track overall revenue and business health.
+
+6. What insights would be the most useful for decision-making?
+We should prioritize:
+
+- Conversion Rates & Drop-off Analysis – Identify where users abandon purchases.
+- Revenue Trends – Monthly and yearly sales performance.
+- Discount Effectiveness – Do discounts lead to higher conversions?
+- Product & Brand Performance – Which products drive the most revenue?
+- Regional Sales Insights – Where should marketing efforts be focused?
+
+----------------------------------------------------------------------------------
+DAX
+a. Revenue & Sales Performance Metrics
+
+KPI's or Visuals Created:
+- Total Sales - This measure calculates total revenue from sales. 
+- Total Orders - Counts unique user sessions (number of orders).
+- Average Order Value - AOV helps us understand how much customers spend per order.
+- Monthly Revenue - 
+- Total Products Sold - 
+- Total Sales by  Brand - Revenue contribution per brand.
+- Total Sales by Channel 
+- Total Sales by Category
+- Total Sales by Regular v/s High Value Purchase of Orders
+
+Which product categories generate the highest revenue?
+- Top 3 Categories By Sales
+- Top 3 Categories By Orders
+
+Which states contribute the most and least to revenue?
+- Top and Bottom 3 States by Sales
+
+
+
+b. Customer Behavior Analysis
+
+-Conversion Rate (Carts to Purchases) - Percentage of users who purchase after viewing 						products.
+
+	[Conversion Rate = 
+	DIVIDE(
+	    CALCULATE(DISTINCTCOUNT(Sales_Data_Ecommerce[user_session]), 	Sales_Data_Ecommerce[event_type] = "purchase"), 
+	    DISTINCTCOUNT(Sales_Data_Ecommerce[user_session]), 0
+	)]
+
+-Average Time Spent by Users (in Hours) 
+	Average Time Spent = AVERAGE(Sales_Data_Ecommerce[event_hour])
+-Session Duration 
+	- calculated but unable to make visualization
+-Bounce Rate 
+	- Not properly calculated needs more in-depth interpretation for calculation 
+	- Basic Visual created
+	- Bounce Rate is exceeding 15% ---> to 50%
+-User Engagement Rate
+	- calculated but unable to make visualization
+-Average Traffic on Website
+-Number of Users by event_type and Channel
+
+What percentage of customers add products to the cart but do not purchase?
+-Abandoned Cart Rate [(Total Added to Cart - Total Purchases) / Total Added to Cart]
+	- calculated but unable to make visualization
+
+What are the most abandoned products (added to the cart but not purchased)?
+- Top 10 Most Abandoned Products (using product_id) 
+  
+How many users return for repeat purchases within the given time period?
+-Returning Customers(%)
+
+How does user activity (views, carts, purchases) change across different brands?
+- Top 10 Users Based on Brand Activity Change
+
+How do customers navigate through different events (view, cart, purchase)?
+- Number of Users By Event Type
+
+How does discounting/promotions impact conversion rates and revenue?
+- 10 Most impacted Brands by Discounts and Conversion Rates
+
+
+
+c. Promotion Impact Analysis
+-Promotional uplift (difference in sales with and without promotion)
+	-Promotion Uplift = [Discounted Sales] - [Total Sales]
+
+-Promotion Revenue
+-Discount Effectiveness
+-Orders with Discount Applied
+-Top 5 Categories Revenue with Promotion
+-Promotion Uplift by Discount 	
+-Discount Effectiveness by Channel and Event Month
+-Promotion Performance by Day of Week
+-Promotion Uplift for Top 10 Brands
+-Promotion Uplift by Hour Group 
+-Search Popularity 
+
+
+d. Time based Analysis
+- Revenue Last Month
+- Revenue YoY Growth
+	- calculated but unable to make visualization
+- Daily Revenue Trend 
+	- Total Revenue by event_time
+-Monthly Revenue
+-Revenue by Quarter
+-Total Orders by Hour Group (Day)
+-Monthly Revenue by Category
+-Total Revenue by event_time
+-Order, Traffic, Revenue Analysis by Month, Hour Group and Day of Week
+
+
+e. Product and Category Analysis
+-Top 10 Best-Selling Products, Category, Sub-Category, Brand by Sales 
+-Customer Lifetime Value (CLTV) 
+
+-------------------------------------------------------------------------------------------
+Key Insights:
+
+Sales & Orders Analysis:
+	- Apple and Samsung dominate sales in both revenue and total orders.
+	- Electronics category has the highest revenue ($41M) and orders (98K).
+	- Top-performing states: Georgia, Massachusetts, and Wyoming have the highest 		  sales.
+	- Bottom-performing states: Rhode Island, Arizona, and New Mexico have the least 	  sales.
+
+Customer Behavior & Conversion Analysis:
+	- High Conversion Rate (75.4%): Indicates a strong ability to turn visitors into 	  buyers.
+	- High Abandoned Cart Rate (24.62%): Suggests a need for improved checkout 	 	  processes or incentives.
+
+User Engagement:
+	- Users spend an average of 11.09 hours on the site.
+	- Website traffic is 144.34K users.
+ 	- Returning customers make up 8.58%, which is relatively low.
+
+Event Type Analysis (User Behavior on Site):
+	- Most users only view products (87M views), but significantly fewer proceed to 	  cart (12M) or purchase (9M).
+	- Samsung and Apple drive the highest user engagement in different event types.
+	- Traffic from the app and browser is evenly distributed.
+
+Brand Engagement Analysis:
+	- Top 3 brands by user session activity: Samsung, Apple, and Xiaomi.
+	- Significant drop-off from viewing to purchasing across brands.
+
+Bounce Rate Issues:
+	- Bounce rate is 50%, indicating potential tracking issues or an actual problem 	  where users leave within 10 seconds or immediately.
+
+Recommendations:
+- Reduce Cart Abandonment Rate:
+	Offer discounts, free shipping, or reminders for abandoned carts.
+	Improve the checkout process (faster and fewer steps).
+- Increase Returning Customers (Only 8.58%):
+	Implement loyalty programs and exclusive offers for repeat customers.
+	Retargeting campaigns for users who previously purchased.
+- Improve Engagement in Low-Performing Brands & Categories:
+	Offer promotional campaigns on less popular brands (Oppo, Acer, Bosch).
+	Introduce bundling offers for low-performing product categories.
+- Optimize Traffic Channels:
+	Since traffic is split between app and browser, optimize both experiences.
+	Improve mobile site speed and make navigation seamless.
+- Fix Bounce Rate Issue:
+	If tracking is incorrect, fix the bounce rate calculation method.
+	If the rate is genuinely high, analyze landing page performance and improve first-	page engagement.
+- Expand Sales in Low-Performing States:
+	Increase regional marketing campaigns in Rhode Island, Arizona, and New Mexico.
+	Offer location-specific promotions.
+
+Conclusion:
+	- Apple & Samsung lead the e-commerce market, but customer drop-off from viewing to 	  purchasing needs attention.
+	- The high conversion rate shows strong sales potential, but cart abandonment and 	  bounce rate need urgent fixes.
+	- Returning customers are low, indicating a need for better retention strategies.
+	- Geographic and brand-based expansion can drive further growth.
+
+Insights from E-commerce Data Analysis
+1. How do different user scores affect purchase behavior?
+	- Users with higher scores (loyalty points, reviews, or engagement levels) tend to       	  have higher purchase frequency and larger order values.
+	- Low-score users may engage less and abandon carts more often.
+	- Actionable Insight: Offer personalized promotions or discounts to lower-score   	  users to increase conversions.
+
+2. Which states have the highest revenue and most engaged users?
+	- States with the highest revenue usually have a larger customer base, higher 		  disposable income, or stronger brand presence.
+	- Engagement metrics (click-through rates, repeat visits, session duration) help 	  identify states where users browse frequently but may not convert.
+	-Actionable Insight: Focus marketing efforts on high-revenue states and run re- 	 engagement campaigns for states with high engagement but lower purchases.
+
+3. What are the best-selling products and least-performing ones?
+	-Best-sellers: Frequently discounted, high-rated, or trending products.
+	-Least-performing products: Items with low visibility, higher prices, or limited 	 stock availability.
+	-Actionable Insight: Improve visibility of least-performing products via 	 	 recommendations or discounts.
+
+4. Which brands have the highest and lowest customer engagement?
+	-High engagement brands typically have strong marketing, good customer reviews, and  	 frequent sales.
+	-Low engagement brands may suffer due to pricing, lack of reviews, or poor product 	 descriptions.
+	- Actionable Insight: Improve content, run influencer campaigns, or bundle low-	 	  engagement brands with popular ones.
+
+5. Is there a difference in conversion rate between users on the app vs. the browser?
+	- App users usually have higher conversion rates due to a smoother user experience, 	  push notifications, and saved payment details.
+	- Browser users may drop off due to friction in checkout or lack of login benefits.
+	- Actionable Insight: Improve mobile responsiveness for web users and offer 	  	  incentives for first-time app downloads.
+
+6. What is the customer segmentation based on purchase behavior?
+	-High-value customers: Frequent buyers with high-order values.
+	-One-time buyers: Customers who made a single purchase and never returned.
+	-Cart abandoners: Users who add items to the cart but don’t complete the purchase.
+	-Discount-driven buyers: Customers who purchase mostly during sales.
+	-Actionable Insight: Run targeted email campaigns or personalized offers for 	 	 different segments.
+
+7. How does seasonality affect sales performance?
+	-Dips in off-season months when demand decreases.
+	-Actionable Insight: Plan inventory and marketing budgets around seasonal peaks and 	 offer special promotions during slow months.
+
+8. What are peak hours and days for sales and customer activity?
+	-Evenings (7 PM - 10 PM) and weekends (Saturday & Sunday) typically see higher 	traffic and conversions.
+	-Actionable Insight: Schedule ads, discounts, and push notifications during peak 	hours for better engagement.
+
+9. Which day/time/channel has the highest customer drop-off?
+	-Drop-offs might be highest during checkout (due to payment failures, extra 	shipping costs) or during browsing (low engagement with product listings).
+	-Channels with high drop-offs: Desktop browsers or social media referrals with weak 	 intent.
+	-Actionable Insight: Improve checkout UX, offer better payment options, and analyze 	 referral sources with the highest bounce rates.
+
